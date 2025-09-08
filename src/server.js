@@ -4,7 +4,7 @@ import cors from 'cors';
 import axios from 'axios';
 import cron from 'node-cron';
 import fs from 'fs';
-import pdfParse from 'pdf-parse';
+import { extractPdfText } from './utils/pdfText.js';
 import pool from './db.js';
 import { embedTexts } from './utils/embed.js';
 import { ensureSchema } from './utils/schema.js';
@@ -28,7 +28,7 @@ app.post('/knowledge/ingest', async (req,res)=>{
       const resp = await axios.get(it.url, { responseType: 'arraybuffer' });
       const buf = Buffer.from(resp.data);
       const isPdf = (resp.headers['content-type']||'').includes('pdf') || it.url.toLowerCase().endsWith('.pdf');
-      if (isPdf){ const parsed = await pdfParse(buf); text = parsed.text || ''; }
+      const text = await extractPdfText(buf);
       else {
         const html = buf.toString('utf-8');
         text = html.replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
